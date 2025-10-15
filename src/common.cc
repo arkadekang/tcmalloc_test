@@ -95,6 +95,14 @@ static int AlignmentForSize(size_t size) {
     // requirements for some SSE types.
     alignment = kMinAlign;
   }
+  
+  // Apply size class skip factor to increase alignment globally
+  // This reduces the number of size classes across all size ranges
+  // kSizeClassSkipFactor: 1=no change, 2=2x alignment, 4=4x alignment
+  if (kSizeClassSkipFactor > 1) {
+    alignment *= kSizeClassSkipFactor;
+  }
+  
   // Maximum alignment allowed is page size alignment.
   if (alignment > kPageSize) {
     alignment = kPageSize;
@@ -207,6 +215,14 @@ void SizeMap::Init() {
     sc++;
   }
   num_size_classes = sc;
+  
+  // Always print the size class count and configuration
+  Log(kLog, __FILE__, __LINE__,
+      "TCMalloc: num_size_classes=", sc, 
+      " kClassSizesMax=", kClassSizesMax);
+  Log(kLog, __FILE__, __LINE__,
+      "TCMalloc: kSizeClassSkipFactor=", kSizeClassSkipFactor);
+  
   if (sc > kClassSizesMax) {
     Log(kCrash, __FILE__, __LINE__,
         "too many size classes: (found vs. max)", sc, kClassSizesMax);

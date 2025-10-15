@@ -83,6 +83,14 @@ static const size_t kMaxThreadCacheSize = 4 << 20;
 static const size_t kPageSize   = 1 << kPageShift;
 static const size_t kMaxSize    = 256 * 1024;
 static const size_t kAlignment  = 8;
+
+// Size class granularity control: Multiply alignment by this factor
+// This reduces size class count across ALL size ranges uniformly
+// 1 = Normal alignment (most size classes, ~88, default)
+// 2 = 2x alignment (fewer size classes, ~50% reduction)
+// 4 = 4x alignment (even fewer size classes, ~75% reduction)
+// Higher values = coarser granularity = more internal fragmentation but better cache efficiency
+static const size_t kSizeClassSkipFactor = 1;
 // For all span-lengths <= kMaxPages we keep an exact-size list in PageHeap.
 static const size_t kMaxPages = 1 << (20 - kPageShift);
 

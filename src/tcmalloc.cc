@@ -808,6 +808,21 @@ class TCMallocImplementation : public MallocExtension {
       return true;
     }
 
+    if (strcmp(name, "tcmalloc.num_size_classes") == 0) {
+      *value = Static::num_size_classes();
+      return true;
+    }
+
+    if (strcmp(name, "tcmalloc.max_size_classes") == 0) {
+      *value = kClassSizesMax;
+      return true;
+    }
+
+    if (strcmp(name, "tcmalloc.max_size") == 0) {
+      *value = kMaxSize;
+      return true;
+    }
+
     if (TestingPortal** portal = TestingPortal::CheckGetPortal(name, value); portal) {
       *portal = TestingPortalImpl::Get();
       *value = 1;
