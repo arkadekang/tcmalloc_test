@@ -81,8 +81,10 @@ class HeapProfileTable {
   // Record an allocation at 'ptr' of 'bytes' bytes.  'stack_depth'
   // and 'call_stack' identifying the function that requested the
   // allocation. They can be generated using GetCallerStackTrace() above.
+  // 'bytes_real' is the actual size allocated by the allocator (optional, defaults to bytes).
   void RecordAlloc(const void* ptr, size_t bytes,
-                   int stack_depth, const void* const call_stack[]);
+                   int stack_depth, const void* const call_stack[],
+                   size_t bytes_real = 0);
 
   // Record the deallocation of memory at 'ptr'.
   void RecordFree(const void* ptr);
@@ -152,7 +154,8 @@ class HeapProfileTable {
     }
     // This also does set_live(false).
     void set_bucket(Bucket* b) { bucket_rep = reinterpret_cast<uintptr_t>(b); }
-    size_t  bytes;   // Number of bytes in this allocation
+    size_t  bytes;       // Number of bytes requested by user
+    size_t  bytes_real;  // Number of bytes actually allocated
 
     // Access to the allocation liveness flag (for leak checking)
     bool live() const { return bucket_rep & kLive; }

@@ -51,6 +51,8 @@
 #ifndef HEAP_PROFILE_STATS_H_
 #define HEAP_PROFILE_STATS_H_
 
+#include <stdint.h>  // for int64_t, uintptr_t
+
 struct HeapProfileStats {
   // Returns true if the two HeapProfileStats are semantically equal.
   bool Equivalent(const HeapProfileStats& other) const {
@@ -60,8 +62,10 @@ struct HeapProfileStats {
 
   int64_t allocs;      // Number of allocation calls.
   int64_t frees;       // Number of free calls.
-  int64_t alloc_size;  // Total size of all allocated objects so far.
-  int64_t free_size;   // Total size of all freed objects so far.
+  int64_t alloc_size;  // Total size of all allocated objects so far (requested by user).
+  int64_t free_size;   // Total size of all freed objects so far (requested by user).
+  int64_t alloc_size_real;  // Total size actually allocated by allocator.
+  int64_t free_size_real;   // Total size actually freed by allocator.
 };
 
 // Allocation and deallocation statistics per each stack trace.

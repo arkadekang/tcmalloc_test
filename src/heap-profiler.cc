@@ -282,13 +282,16 @@ static void MaybeDumpProfileLocked() {
 static void NewHook(const void* ptr, size_t bytes) {
   if (!ptr) return;
 
+  // Get the actual allocated size from TCMalloc
+  size_t bytes_real = MallocExtension::instance()->GetAllocatedSize(ptr);
+  
   // Take the stack trace outside the critical section.
   static constexpr int kDepth = 32;
   void* stack[kDepth];
   int depth = tcmalloc::GrabBacktrace(stack, kDepth, 1);
   SpinLockHolder l(&heap_lock);
   if (is_on) {
-    heap_profile->RecordAlloc(ptr, bytes, depth, stack);
+    heap_profile->RecordAlloc(ptr, bytes, depth, stack, bytes_real);
     MaybeDumpProfileLocked();
   }
 }

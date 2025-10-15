@@ -65,6 +65,9 @@
 #include "gperftools/malloc_hook.h"
 #include "gperftools/stacktrace.h"
 
+// for MallocExtension::GetNumericProperty("generic.current_allocated_bytes")
+#include "gperftools/malloc_extension.h"
+
 //----------------------------------------------------------------------
 
 DEFINE_bool(cleanup_old_heap_profiles,
@@ -170,16 +173,24 @@ HeapProfileTable::Bucket* HeapProfileTable::GetBucket(int depth,
 
 void HeapProfileTable::RecordAlloc(
     const void* ptr, size_t bytes, int stack_depth,
-    const void* const call_stack[]) {
+    const void* const call_stack[], size_t bytes_real) {
+  // If bytes_real is 0, assume it's the same as bytes
+  if (bytes_real == 0) {
+    bytes_real = bytes;
+  }
+  
   Bucket* b = GetBucket(stack_depth, call_stack);
   b->allocs++;
   b->alloc_size += bytes;
+  b->alloc_size_real += bytes_real;
   total_.allocs++;
   total_.alloc_size += bytes;
+  total_.alloc_size_real += bytes_real;
 
   AllocValue v;
   v.set_bucket(b);  // also did set_live(false); set_ignore(false)
   v.bytes = bytes;
+  v.bytes_real = bytes_real;
   address_map_->Insert(ptr, v);
 }
 
@@ -189,8 +200,10 @@ void HeapProfileTable::RecordFree(const void* ptr) {
     Bucket* b = v.bucket();
     b->frees++;
     b->free_size += v.bytes;
+    b->free_size_real += v.bytes_real;
     total_.frees++;
     total_.free_size += v.bytes;
+    total_.free_size_real += v.bytes_real;
   }
 }
 
@@ -240,12 +253,19 @@ void HeapProfileTable::MarkAsIgnored(const void* ptr) {
 void HeapProfileTable::UnparseBucket(const Bucket& b,
                                      tcmalloc::GenericWriter* writer,
                                      const char* extra) {
+  // Format: inuse_count: inuse_bytes [alloc_count: alloc_bytes] @ stack...
+  // Now also include real allocation sizes
   writer->AppendF("%6" PRId64 ": %8" PRId64 " [%6" PRId64 ": %8" PRId64 "] @",
                   b.allocs - b.frees,
                   b.alloc_size - b.free_size,
                   b.allocs,
                   b.alloc_size);
   writer->AppendStr(extra);
+  
+  // Append real allocation size information
+  writer->AppendF(" real_inuse=%8" PRId64 " real_alloc=%8" PRId64,
+                  b.alloc_size_real - b.free_size_real,
+                  b.alloc_size_real);
 
   for (int d = 0; d < b.depth; d++) {
     writer->AppendF(" 0x%08" PRIxPTR,
@@ -300,6 +320,7 @@ bool HeapProfileTable::WriteProfile(const char* file_name,
     memset(&b, 0, sizeof(b));
     b.allocs = 1;
     b.alloc_size = v->bytes;
+    b.alloc_size_real = v->bytes_real;
     b.depth = v->bucket()->depth;
     b.stack = v->bucket()->stack;
     UnparseBucket(b, &writer, "");
