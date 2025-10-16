@@ -178,7 +178,15 @@ void SizeMap::Init() {
   int alignment = kAlignment;
   CHECK_CONDITION(kAlignment <= kMinAlign);
   for (size_t size = kAlignment; size <= kMaxSize; size += alignment) {
-    alignment = AlignmentForSize(size);
+    // Get the new alignment for this size
+    int new_alignment = AlignmentForSize(size);
+    
+    // If alignment increased (due to kSizeClassSkipFactor), round up size
+    if (new_alignment > alignment) {
+      size = (size + new_alignment - 1) & ~(new_alignment - 1);
+      if (size > kMaxSize) break;
+    }
+    alignment = new_alignment;
     CHECK_CONDITION((size % alignment) == 0);
 
     int blocks_to_move = NumMoveSize(size) / 4;
