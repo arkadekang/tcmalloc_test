@@ -278,6 +278,9 @@ void HeapProfileTable::SaveProfile(tcmalloc::GenericWriter* writer) const {
   writer->AppendStr(kProfileHeader);
   UnparseBucket(total_, writer, " heapprofile");
 
+  // MODIFICATION: Output only header (summary line) to reduce file size
+  // Commented out stack trace details and memory maps
+  /*
   int bucket_count = 0;
   for (int i = 0; i < kHashTableSize; i++) {
     for (Bucket* curr = bucket_table_[i]; curr != nullptr; curr = curr->next) {
@@ -290,6 +293,7 @@ void HeapProfileTable::SaveProfile(tcmalloc::GenericWriter* writer) const {
 
   writer->AppendStr(kProcSelfMapsHeader);
   tcmalloc::SaveProcSelfMaps(writer);
+  */
 }
 
 bool HeapProfileTable::WriteProfile(const char* file_name,
@@ -308,6 +312,9 @@ bool HeapProfileTable::WriteProfile(const char* file_name,
 
   UnparseBucket(total, &writer, " heapprofile");
 
+  // MODIFICATION: Output only header (summary line) to reduce file size
+  // Commented out allocation details and memory maps
+  /*
   allocations->Iterate([&writer] (const void* ptr, AllocValue* v) {
     if (v->live()) {
       v->set_live(false);
@@ -328,6 +335,7 @@ bool HeapProfileTable::WriteProfile(const char* file_name,
 
   RawWrite(fd, kProcSelfMapsHeader, strlen(kProcSelfMapsHeader));
   tcmalloc::SaveProcSelfMapsToRawFD(fd);
+  */
 
   RawClose(fd);
   return true;
